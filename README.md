@@ -6,8 +6,6 @@ allocations) and rendering them to a writer or to a string.
 Build type-safe, reusable HTML components using functions and
 enums — no template files.
 
-[![Hippocratic License HL3-ECO-FFD](https://img.shields.io/static/v1?label=Hippocratic%20License&message=HL3-ECO-FFD&labelColor=5e2751&color=bc8c3d)](https://firstdonoharm.dev/version/3/0/eco-ffd.html)
-
 ## Features
 
 - 🔧 No template files — Build HTML programmatically with full type safety
@@ -189,7 +187,7 @@ zig build run
 
 ## License
 
-MIT
+[![Hippocratic License HL3-ECO-FFD](https://img.shields.io/static/v1?label=Hippocratic%20License&message=HL3-ECO-FFD&labelColor=5e2751&color=bc8c3d)](https://firstdonoharm.dev/version/3/0/eco-ffd.html)
 
 ## Contributing
 
