@@ -14,12 +14,12 @@ pub const text = dom.text;
 pub const custom = dom.custom;
 
 // Special nodes
-pub fn document(attrs: []const Attribute, children: []const Node) Node {
-    return dom.tag(.document, attrs, children);
+pub fn document(child: Node) Node {
+    return dom.tag(.document, &.{}, &.{child});
 }
 
-pub fn fragment(attrs: []const Attribute, children: []const Node) Node {
-    return dom.tag(.fragment, attrs, children);
+pub fn fragment(children: []const Node) Node {
+    return dom.tag(.fragment, &.{}, children);
 }
 
 // Void elements (self-closing)
