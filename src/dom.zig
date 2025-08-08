@@ -108,8 +108,19 @@ pub const Node = struct {
                     }
                 }
             },
-            .document, .fragment => {
-                // Invisible containers - just render children
+            .document => {
+                // Special case
+                try writer.writeAll("<!DOCTYPE html>\n");
+                const nodes = switch (self.children) {
+                    .nodes => |nodes_array| nodes_array,
+                    else => &.{},
+                };
+                for (nodes) |child| {
+                    try child.render(writer);
+                }
+            },
+            .fragment => {
+                // Invisible container - just render children
                 const nodes = switch (self.children) {
                     .nodes => |nodes_array| nodes_array,
                     else => &.{},
@@ -285,6 +296,26 @@ test "void elements" {
     defer allocator.free(html);
 
     try testing.expectEqualStrings("<div><img src=\"image.png\" alt=\"Test\"></div>", html);
+}
+
+test "whole document" {
+    const allocator = testing.allocator;
+
+    const doc = tag(.document, &.{}, &.{
+        tag(.html, &.{}, &.{
+            tag(.head, &.{}, &.{
+                tag(.title, &.{}, &.{text("Test")}),
+            }),
+            tag(.body, &.{}, &.{
+                text("Description"),
+            }),
+        }),
+    });
+
+    const html = try doc.renderToString(allocator);
+    defer allocator.free(html);
+
+    try testing.expectEqualStrings("<!DOCTYPE html>\n<html><head><title>Test</title></head><body>Description</body></html>", html);
 }
 
 test "document fragment" {
