@@ -26,8 +26,8 @@ const circle = tags.circle;
 
 // Decode a small set of common HTML entities so comparisons are resilient to encoding differences
 fn decodeBasicEntities(src: []const u8, allocator: std.mem.Allocator) ![]u8 {
-    var out = std.ArrayList(u8).init(allocator);
-    errdefer out.deinit();
+    var out = std.ArrayList(u8){};
+    errdefer out.deinit(allocator);
 
     var i: usize = 0;
     while (i < src.len) : (i += 1) {
@@ -35,41 +35,41 @@ fn decodeBasicEntities(src: []const u8, allocator: std.mem.Allocator) ![]u8 {
         if (c == '&') {
             // Try to match a few common named/numeric entities
             if (i + 4 <= src.len and std.mem.eql(u8, src[i .. i + 4], "&lt;")) {
-                try out.append('<');
+                try out.append(allocator, '<');
                 i += 3; // loop will i += 1
                 continue;
             } else if (i + 4 <= src.len and std.mem.eql(u8, src[i .. i + 4], "&gt;")) {
-                try out.append('>');
+                try out.append(allocator, '>');
                 i += 3;
                 continue;
             } else if (i + 5 <= src.len and std.mem.eql(u8, src[i .. i + 5], "&amp;")) {
-                try out.append('&');
+                try out.append(allocator, '&');
                 i += 4;
                 continue;
             } else if (i + 6 <= src.len and std.mem.eql(u8, src[i .. i + 6], "&quot;")) {
-                try out.append('"');
+                try out.append(allocator, '"');
                 i += 5;
                 continue;
             } else if (i + 6 <= src.len and std.mem.eql(u8, src[i .. i + 6], "&apos;")) {
-                try out.append('\'');
+                try out.append(allocator, '\'');
                 i += 5;
                 continue;
             } else if (i + 5 <= src.len and std.mem.eql(u8, src[i .. i + 5], "&#39;")) {
-                try out.append('\'');
+                try out.append(allocator, '\'');
                 i += 4;
                 continue;
             }
         }
-        try out.append(c);
+        try out.append(allocator, c);
     }
 
-    return out.toOwnedSlice();
+    return out.toOwnedSlice(allocator);
 }
 
 // Helper function to normalize HTML for comparison
 fn normalizeHtml(html: []const u8, allocator: std.mem.Allocator) ![]u8 {
-    var result = std.ArrayList(u8).init(allocator);
-    errdefer result.deinit();
+    var result = std.ArrayList(u8){};
+    errdefer result.deinit(allocator);
 
     var i: usize = 0;
     var in_tag = false;
@@ -80,15 +80,15 @@ fn normalizeHtml(html: []const u8, allocator: std.mem.Allocator) ![]u8 {
 
         if (c == '<') {
             in_tag = true;
-            try result.append(c);
+            try result.append(allocator, c);
             prev_was_space = false;
         } else if (c == '>') {
             in_tag = false;
-            try result.append(c);
+            try result.append(allocator, c);
             prev_was_space = false;
         } else if (in_tag) {
             // Inside tags, preserve everything
-            try result.append(c);
+            try result.append(allocator, c);
             prev_was_space = false;
         } else {
             // Outside tags (in text content)
@@ -102,18 +102,18 @@ fn normalizeHtml(html: []const u8, allocator: std.mem.Allocator) ![]u8 {
                     i = j - 1; // loop will i += 1
                 } else {
                     if (!prev_was_space) {
-                        try result.append(' ');
+                        try result.append(allocator, ' ');
                         prev_was_space = true;
                     }
                 }
             } else {
-                try result.append(c);
+                try result.append(allocator, c);
                 prev_was_space = false;
             }
         }
     }
 
-    const collapsed = try result.toOwnedSlice();
+    const collapsed = try result.toOwnedSlice(allocator);
     // Decode common entities after collapsing whitespace
     const decoded = try decodeBasicEntities(collapsed, allocator);
     allocator.free(collapsed);

@@ -137,11 +137,11 @@ pub const Node = struct {
                 };
 
                 // Opening tag
-                try writer.print("<{s}", .{custom_elem.tag_name});
+                try std.fmt.format(writer, "<{s}", .{custom_elem.tag_name});
 
                 // Attributes
                 for (self.attributes) |attribute| {
-                    try writer.print(" {s}=\"{s}\"", .{ attribute.name, attribute.value });
+                    try std.fmt.format(writer, " {s}=\"{s}\"", .{ attribute.name, attribute.value });
                 }
 
                 // Close opening tag
@@ -151,18 +151,18 @@ pub const Node = struct {
                 for (custom_elem.children) |child| {
                     try child.render(writer);
                 }
-                try writer.print("</{s}>", .{custom_elem.tag_name});
+                try std.fmt.format(writer, "</{s}>", .{custom_elem.tag_name});
             },
             else => {
                 // Regular elements
                 const tag_name = self.tag.name();
 
                 // Opening tag
-                try writer.print("<{s}", .{tag_name});
+                try std.fmt.format(writer, "<{s}", .{tag_name});
 
                 // Attributes
                 for (self.attributes) |attribute| {
-                    try writer.print(" {s}=\"{s}\"", .{ attribute.name, attribute.value });
+                    try std.fmt.format(writer, " {s}=\"{s}\"", .{ attribute.name, attribute.value });
                 }
 
                 // Close opening tag
@@ -177,7 +177,7 @@ pub const Node = struct {
                     for (nodes) |child| {
                         try child.render(writer);
                     }
-                    try writer.print("</{s}>", .{tag_name});
+                    try std.fmt.format(writer, "</{s}>", .{tag_name});
                 }
             },
         }
@@ -185,10 +185,10 @@ pub const Node = struct {
 
     /// Render to a string
     pub fn renderToString(self: Node, allocator: std.mem.Allocator) ![]u8 {
-        var list = std.ArrayList(u8).init(allocator);
-        errdefer list.deinit();
-        try self.render(list.writer());
-        return try list.toOwnedSlice();
+        var list = std.ArrayList(u8){};
+        errdefer list.deinit(allocator);
+        try self.render(list.writer(allocator));
+        return try list.toOwnedSlice(allocator);
     }
 };
 

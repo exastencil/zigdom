@@ -36,7 +36,7 @@ const zigdom_dep = b.dependency("zigdom", .{ .target = target, .optimize = optim
 exe.root_module.addImport("zigdom", zigdom_dep.module("zigdom"));
 ```
 
-Minimum Zig version: see `build.zig.zon` (currently 0.14.1).
+Minimum Zig version: see `build.zig.zon` (currently 0.15.0).
 
 ## Usage
 

@@ -1,5 +1,5 @@
 //! zigdom - A unified DOM library for Zig
-//! 
+//!
 //! Provides a simple, unified Node-based DOM structure where:
 //! - Everything is a Node with attributes and children
 //! - Nodes are stack-allocated for efficiency
