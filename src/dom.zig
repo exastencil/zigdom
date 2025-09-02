@@ -90,6 +90,8 @@ pub const Node = struct {
 
     /// Render the node to a writer
     pub fn render(self: Node, writer: anytype) anyerror!void {
+        // Make a mutable alias to satisfy writer methods that expect a mutable receiver
+        var w = writer;
         switch (self.tag) {
             .text => {
                 // Render text content with HTML escaping
@@ -99,24 +101,24 @@ pub const Node = struct {
                 };
                 for (text_content) |c| {
                     switch (c) {
-                        '<' => try writer.writeAll("&lt;"),
-                        '>' => try writer.writeAll("&gt;"),
-                        '&' => try writer.writeAll("&amp;"),
-                        '"' => try writer.writeAll("&quot;"),
-                        '\'' => try writer.writeAll("&#39;"),
-                        else => try writer.writeByte(c),
+                        '<' => try w.writeAll("&lt;"),
+                        '>' => try w.writeAll("&gt;"),
+                        '&' => try w.writeAll("&amp;"),
+                        '"' => try w.writeAll("&quot;"),
+                        '\'' => try w.writeAll("&#39;"),
+                        else => try w.writeByte(c),
                     }
                 }
             },
             .document => {
                 // Special case
-                try writer.writeAll("<!DOCTYPE html>\n");
+                try w.writeAll("<!DOCTYPE html>\n");
                 const nodes = switch (self.children) {
                     .nodes => |nodes_array| nodes_array,
                     else => &.{},
                 };
                 for (nodes) |child| {
-                    try child.render(writer);
+                    try child.render(w);
                 }
             },
             .fragment => {
@@ -126,7 +128,7 @@ pub const Node = struct {
                     else => &.{},
                 };
                 for (nodes) |child| {
-                    try child.render(writer);
+                    try child.render(w);
                 }
             },
             .custom => {
@@ -137,36 +139,48 @@ pub const Node = struct {
                 };
 
                 // Opening tag
-                try std.fmt.format(writer, "<{s}", .{custom_elem.tag_name});
+                try w.writeByte('<');
+                try w.writeAll(custom_elem.tag_name);
 
                 // Attributes
                 for (self.attributes) |attribute| {
-                    try std.fmt.format(writer, " {s}=\"{s}\"", .{ attribute.name, attribute.value });
+                    try w.writeByte(' ');
+                    try w.writeAll(attribute.name);
+                    try w.writeAll("=\"");
+                    try w.writeAll(attribute.value);
+                    try w.writeByte('"');
                 }
 
                 // Close opening tag
-                try writer.writeAll(">");
+                try w.writeAll(">");
 
                 // Children and closing tag
                 for (custom_elem.children) |child| {
-                    try child.render(writer);
+                    try child.render(w);
                 }
-                try std.fmt.format(writer, "</{s}>", .{custom_elem.tag_name});
+                try w.writeAll("</");
+                try w.writeAll(custom_elem.tag_name);
+                try w.writeByte('>');
             },
             else => {
                 // Regular elements
                 const tag_name = self.tag.name();
 
                 // Opening tag
-                try std.fmt.format(writer, "<{s}", .{tag_name});
+                try w.writeByte('<');
+                try w.writeAll(tag_name);
 
                 // Attributes
                 for (self.attributes) |attribute| {
-                    try std.fmt.format(writer, " {s}=\"{s}\"", .{ attribute.name, attribute.value });
+                    try w.writeByte(' ');
+                    try w.writeAll(attribute.name);
+                    try w.writeAll("=\"");
+                    try w.writeAll(attribute.value);
+                    try w.writeByte('"');
                 }
 
                 // Close opening tag
-                try writer.writeAll(">");
+                try w.writeAll(">");
 
                 // Children and closing tag (unless void element)
                 if (!self.tag.isVoid()) {
@@ -175,9 +189,11 @@ pub const Node = struct {
                         else => &.{},
                     };
                     for (nodes) |child| {
-                        try child.render(writer);
+                        try child.render(w);
                     }
-                    try std.fmt.format(writer, "</{s}>", .{tag_name});
+                    try w.writeAll("</");
+                    try w.writeAll(tag_name);
+                    try w.writeByte('>');
                 }
             },
         }
